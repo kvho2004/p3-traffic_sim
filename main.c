@@ -1,8 +1,8 @@
-#include <pthread.h>   // threads, mutexes, condition variables
-#include <stdio.h>     // printf for logging
-#include <stdlib.h>    // exit, malloc
-#include <unistd.h>    // nanosleep (nanosecond sleep)
-#include <stdatomic.h> // atomic_bool (C11) for flags
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdatomic.h>
 
 #include "common.h"
 #include "logger.h"
@@ -11,6 +11,54 @@
 #include "factory_f3.h"
 #include "transport_ship.h"
 #include "transport_trucks.h"
+
+void scenario_pause_f1(int seconds)
+{
+    log_event("SCENARIO", "Pausing F1 production...");
+    atomic_store(&sim.f1_paused, 1);
+    sleep(seconds);
+    atomic_store(&sim.f1_paused, 0);
+    log_event("SCENARIO", "Resumed F1 production.");
+}
+
+void scenario_pause_f2(int seconds)
+{
+    log_event("SCENARIO", "Pausing F2 production...");
+    atomic_store(&sim.f2_paused, 1);
+    sleep(seconds);
+    atomic_store(&sim.f2_paused, 0);
+    log_event("SCENARIO", "Resumed F2 production.");
+}
+
+void scenario_pause_ship(int seconds)
+{
+    log_event("SCENARIO", "Ship out of commission...");
+    atomic_store(&sim.ship_paused, 1);
+    sleep(seconds);
+    atomic_store(&sim.ship_paused, 0);
+    log_event("SCENARIO", "Ship resumed operation.");
+}
+
+void scenario_pause_f3_dept(int dept_id, int seconds)
+{
+    if (dept_id == 1)
+    {
+        log_event("SCENARIO", "F3 Dept 1 paused...");
+        atomic_store(&sim.f3_dept1_paused, 1);
+        sleep(seconds);
+        atomic_store(&sim.f3_dept1_paused, 0);
+        log_event("SCENARIO", "F3 Dept 1 resumed.");
+    }
+    else
+    {
+        log_event("SCENARIO", "F3 Dept 2 paused...");
+        atomic_store(&sim.f3_dept2_paused, 1);
+        sleep(seconds);
+        atomic_store(&sim.f3_dept2_paused, 0);
+        log_event("SCENARIO", "F3 Dept 2 resumed.");
+    }
+}
+
 
 int main(void)
 {
@@ -48,25 +96,27 @@ int main(void)
 
     log_event("MAIN", "Simulation started.");
 
-    sleep(10); // run simulation for 10 seconds
-
-    // spec: The P1 production stops for several seconds.
-    // The P2 production stops for several seconds.
-    // The ship is out of commission for several seconds.
-    // One F3 department is out of order for several seconds.
-
-    log_event("MAIN", "Pausing F1 production for 3 seconds...");
-    atomic_store(&sim.f1_paused, 1);
-    sleep(3);
-    atomic_store(&sim.f1_paused, 0);
-    log_event("MAIN", "Resumed F1 production.");
+    // critical section: run scenario
 
     sleep(5);
 
+    scenario_pause_f1(3);
+    sleep(2);
+
+    scenario_pause_f2(3);
+    sleep(2);
+
+    scenario_pause_ship(3);
+    sleep(2);
+
+    scenario_pause_f3_dept(1, 3);
+
+    sleep(5);
+
+    // end simulation
+
     log_event("MAIN", "Stopping simulation...");
     atomic_store(&sim.running, 0);
-
-    // wake all blocked threads so they can see running=0 and exit
 
     pthread_cond_broadcast(&sim.f1_output.not_empty);
     pthread_cond_broadcast(&sim.f1_output.not_full);
@@ -77,18 +127,17 @@ int main(void)
     pthread_cond_broadcast(&sim.f3_input.p2.not_empty);
     pthread_cond_broadcast(&sim.f3_input.p2.not_full);
 
-    // join threads
     pthread_join(f1_thread, NULL);
     pthread_join(f2_thread, NULL);
     pthread_join(f3_dept1_thread, NULL);
     pthread_join(f3_dept2_thread, NULL);
     pthread_join(ship_thread_id, NULL);
+
     for (int i = 0; i < TRUCK_COUNT; i++)
     {
         pthread_join(truck_threads[i], NULL);
     }
 
-    // cleanup
     storage_destroy(&sim.f1_output);
     storage_destroy(&sim.f2_output);
     storage_destroy(&sim.f3_input.p1);
@@ -96,5 +145,6 @@ int main(void)
 
     printf("\nSimulation ended. Total P3 produced: %d\n",
            atomic_load(&sim.f3_p3_count));
+
     return 0;
-};
+}
