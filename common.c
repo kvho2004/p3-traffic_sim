@@ -1,9 +1,9 @@
 #include "common.h"
 
-SimState sim;
+struct SimState sim;
 
 
-void storage_init(Storage* s, int max) {
+void storage_init(struct Storage *s, int max) {
     s->count = 0;
     s->max = max;
     
@@ -15,7 +15,7 @@ void storage_init(Storage* s, int max) {
 
 // objects become uninitialized
 
-void storage_destroy(Storage* s) {
+void storage_destroy(struct Storage* s) {
     pthread_mutex_destroy(&s->mtx);
     pthread_cond_destroy(&s->not_full);
     pthread_cond_destroy(&s->not_empty);
