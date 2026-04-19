@@ -2,24 +2,33 @@
 #include "common.h"
 #include "logger.h"
 #include <unistd.h>
+#include <time.h>
 
-void* f1_dpt(void* arg) {
+void *f2_dpt(void *arg)
+{
     (void)arg;
-    Storage* s = &sim.f2_output;
+    struct Storage *s = &sim.f2_output;
 
-    while (atomic_load(&sim.running)) {
+    while (atomic_load(&sim.running))
+    {
 
         // [IMPORTANT]: implement p1 and p2 prod delays, 1 F3 dpt out of order several seconds
         while (atomic_load(&sim.f2_paused) && atomic_load(&sim.running))
-            usleep(50000);
+        {
+            struct timespec ts = {0, 50000L * 1000L};
+            nanosleep(&ts, NULL);
+        }
 
-        usleep(F2_PRODUCE_MS * 2000); /* produce for 200ms */
+        long usec = F2_PRODUCE_MS * 2000L;
+        struct timespec ts = {usec / 1000000L, (usec % 1000000L) * 1000L};
+        nanosleep(&ts, NULL); /* produce for 200ms */
 
         pthread_mutex_lock(&s->mtx);
         while (s->count >= s->max && atomic_load(&sim.running))
             pthread_cond_wait(&s->not_full, &s->mtx);
 
-        if (!atomic_load(&sim.running)) {
+        if (!atomic_load(&sim.running))
+        {
             pthread_mutex_unlock(&s->mtx);
             break;
         }

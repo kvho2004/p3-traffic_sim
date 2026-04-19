@@ -35,6 +35,17 @@ struct F3 {
     struct Storage p2;
 };
 
+/*
+ * LOCK ORDERING RULE — must always be acquired in this order:
+ *   1. f1_out.mtx
+ *   2. f2_out.mtx
+ *   3. f3_in.p1.mtx
+ *   4. f3_in.p2.mtx
+ *   5. log_mtx
+ *
+ * Never acquire a lower-numbered lock while holding a higher-numbered one.
+ * This prevents circular waits (deadlock condition).
+ */
 
 // [IMPORTANT]: implement p1 and p2 prod delays, 1 F3 dpt out of order several seconds
 struct SimState {
@@ -56,5 +67,6 @@ extern struct SimState sim;
 
 void storage_init(struct Storage* s, int max);
 void storage_destroy(struct Storage* s);
+void *watchdog_thread(void *arg);
 
 #endif

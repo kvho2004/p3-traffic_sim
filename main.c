@@ -1,8 +1,8 @@
-#include <pthread.h>      // threads, mutexes, condition variables
-#include <stdio.h>        // printf for logging
-#include <stdlib.h>       // exit, malloc
-#include <unistd.h>       // usleep (microsecond sleep)
-#include <stdatomic.h>    // atomic_bool (C11) for flags
+#include <pthread.h>   // threads, mutexes, condition variables
+#include <stdio.h>     // printf for logging
+#include <stdlib.h>    // exit, malloc
+#include <unistd.h>    // nanosleep (nanosecond sleep)
+#include <stdatomic.h> // atomic_bool (C11) for flags
 
 #include "common.h"
 #include "logger.h"
@@ -12,8 +12,8 @@
 #include "transport_ship.h"
 #include "transport_trucks.h"
 
-
-int main(void) {
+int main(void)
+{
     // initialize simulation state
     storage_init(&sim.f1_output, F1_STORAGE_MAX);
     storage_init(&sim.f2_output, F2_STORAGE_MAX);
@@ -40,7 +40,8 @@ int main(void) {
     pthread_create(&f3_dept2_thread, NULL, f3_dpt, &dept_args[1]);
     pthread_create(&ship_thread_id, NULL, ship_thread, NULL);
 
-    for (int i = 0; i < TRUCK_COUNT; i++) {
+    for (int i = 0; i < TRUCK_COUNT; i++)
+    {
         truck_args[i].truck_id = i + 1;
         pthread_create(&truck_threads[i], NULL, truck_thread, &truck_args[i]);
     }
@@ -82,7 +83,8 @@ int main(void) {
     pthread_join(f3_dept1_thread, NULL);
     pthread_join(f3_dept2_thread, NULL);
     pthread_join(ship_thread_id, NULL);
-    for (int i = 0; i < TRUCK_COUNT; i++) {
+    for (int i = 0; i < TRUCK_COUNT; i++)
+    {
         pthread_join(truck_threads[i], NULL);
     }
 

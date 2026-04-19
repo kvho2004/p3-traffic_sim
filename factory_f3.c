@@ -3,6 +3,7 @@
 #include "logger.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 
 
 void* f3_dpt(void *arg) {
@@ -17,8 +18,9 @@ void* f3_dpt(void *arg) {
 
     while (atomic_load(&sim.running)) {
         // check if paused
-        if (atomic_load(paused)) {
-            usleep(50000); // sleep for 100ms to avoid busy waiting
+        if (atomic_load(paused) && atomic_load(&sim.running)) {
+            struct timespec ts = {0, 50000L * 1000L};
+            nanosleep(&ts, NULL); // sleep for 100ms to avoid busy waiting
         }
 
         // consume 2 parts from p1 and 1 part from p2
@@ -51,7 +53,9 @@ void* f3_dpt(void *arg) {
         pthread_mutex_unlock(&p2_s->mtx);
 
         // produce P3 unit
-        usleep(F3_PRODUCE_MS * 1000); // produce time delay
+        long usec = F3_PRODUCE_MS * 1000L;
+        struct timespec ts = {usec / 1000000L, (usec % 1000000L) * 1000L};
+        nanosleep(&ts, NULL); // produce time delay
         int total = atomic_fetch_add(&sim.f3_p3_count, 1) + 1; // increment total count of P3 produced  
         log_fmt(label, "Produced P3 unit %d (consumed 2 P1 and 1 P2)", total);
  

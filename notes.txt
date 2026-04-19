@@ -1,0 +1,41 @@
+## 2) Deadlock Analysis
+- Analyze the system to identify **potential deadlocks**.
+- Provide:
+  - Explanation of **where and why** deadlock can occur.
+  - Description of **how** it happens in this system.
+  - A **concrete solution** to prevent it.
+  
+
+Definitions:
+
+Deadlock - threads are stuck forever, each waiting on the other
+
+Potential Risk Scenarios:
+
+1. Trucks starved at F3 unload
+    F3 P2 storage: 5/5 (full, filled by previous trucks)
+    5 trucks all waiting on not_full at F3
+    F3 dept consumes 1 P2 → 1 space opens
+    pthread_cond_broadcast wakes ALL 5 trucks
+    All 5 check: only 1 has space → 4 go back to sleep
+    1 truck unloads, signals not_empty
+    Cycle repeats — trucks pile up waiting
+
+Solution-> using pthread_cond_broadcast and while loops instead of if loops
+
+2. F3 dpt needs both P1 and P2
+    F3 dept holds (implicitly) a "committed to produce" state
+    Consumed 2 P1 already, now waiting for 1 P2
+    Ship can't unload P1 because it already did
+    But if lock both storages simultaneously, circular wait is possible
+
+Solution-> Using locks at the appropriate order, NOT lock both at once: 
+        F3 dpt locks P1 storage, take units, 
+        unlock F3,
+        lock P2 storage seperately
+
+3. F2 slow, trucks, starved at F2 loading
+    F2 produces 1 P2 every 200ms
+    5 trucks each need 2 P2 to depart = 10 P2 needed simultaneously
+    F2 max storage = 5
+    Trucks will fight over the 5 slots, most trucks starved
