@@ -60,13 +60,13 @@ void *ship_thread(void *arg)
             pthread_cond_wait(&f3dest->not_full, &f3dest->mtx);
         }
         f3dest->count += loaded;
-        pthread_cond_broadcast(&f3dest->not_full);
+        pthread_cond_broadcast(&f3dest->not_empty); // wake consumers (F3) waiting for product
         pthread_mutex_unlock(&f3dest->mtx);
         log_fmt("SHIP", "Unloaded %d P1 to F3. Returning to F1...", loaded);
         usec = TRAVEL_MS * 1000L;
         ts = (struct timespec){usec / 1000000L, (usec % 1000000L) * 1000L};
         nanosleep(&ts, NULL); // simulate travel time
-    }   
+    }
 
     return NULL;
 };

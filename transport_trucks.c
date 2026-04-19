@@ -18,6 +18,8 @@ void *truck_thread(void *arg)
     {
         pthread_mutex_lock(&f2src->mtx);
 
+        // waits for a full load of P2 (2 units) to transport to F3
+
         while (f2src->count < TRUCK_CAPACITY && atomic_load(&sim.running))
         {
             pthread_cond_wait(&f2src->not_empty, &f2src->mtx);
@@ -38,6 +40,7 @@ void *truck_thread(void *arg)
         nanosleep(&ts, NULL); // simulate travel time
 
         pthread_mutex_lock(&f3dest->mtx);
+
         while (f3dest->count + TRUCK_CAPACITY > f3dest->max && atomic_load(&sim.running))
         {
             pthread_cond_wait(&f3dest->not_full, &f3dest->mtx);
@@ -49,7 +52,7 @@ void *truck_thread(void *arg)
         }
 
         f3dest->count += TRUCK_CAPACITY;
-        pthread_cond_broadcast(&f3dest->not_full);
+        pthread_cond_broadcast(&f3dest->not_empty);  // wake consumers (F3) waiting for product
         pthread_mutex_unlock(&f3dest->mtx);
 
         log_fmt(label, "Unloaded %d P2 to F3. Returning to F2...", TRUCK_CAPACITY);
