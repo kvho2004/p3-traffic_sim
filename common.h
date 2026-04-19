@@ -36,7 +36,7 @@ struct F3 {
 };
 
 /*
- * LOCK ORDERING RULE — must always be acquired in this order:
+ * LOCK ORDERING RULE
  *   1. f1_out.mtx
  *   2. f2_out.mtx
  *   3. f3_in.p1.mtx
