@@ -13,7 +13,7 @@ void storage_init(struct Storage *s, int max) {
     // return false
 }
 
-// objects become uninitialized
+// objects become uninitialized to avoid accidental use after destroy
 
 void storage_destroy(struct Storage* s) {
     pthread_mutex_destroy(&s->mtx);
